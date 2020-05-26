@@ -1,0 +1,102 @@
+﻿import pandas as pd
+import seaborn as sns
+from IPython.display import display
+import Levenshtein
+
+%matplotlib inline
+df = pd.read_csv('C:/Users/jkraus/Desktop/CRS 2015 - Keyterm - Master - Nov 14.csv).dropna(subset=['Concatenate'])
+display(len(df))
+keyword_mapping = {
+  'psychosocial':['psicosocial','psychosociale','psicosocial','psychosozial'],
+  'health':['santé','salud','gezondheid','saúde','gesundheit'],
+  'hospital':['hôpital','hospital','ziekenhuis','krakenhaus'],
+  'clinic':['clinique','clínica','kliniek','klinik'],
+  'hss':['fss'],
+  'system strengthen':['renforcement du système','fortalecimiento del sistema','systeem versteek','fortalecimento do sistema','systemstärke'],
+  'diagnos':['diagnóstico','diagnose','diagnosticar'],
+  'disease':['maladie','enfermedad','ziekte','doença','krankheit'],
+  'mortality':['mortalité','mortalidad','mortalitiet','mortalidade','sterblichkeit'],
+  'morbidity':['morbidité','morbosidad','morbiditeit','morbidade','morbidität'],
+  'vaccine':['vaccin','vacuna','vacina','impfstoff'],
+  'primary care':['premiers soins','atención primaria','eerstelijnszorg'.'cuidados primários','grundversorgung'],
+  'social determinant':['déterminant social','determinante social','sociale determinant','soziale bestimmung'],
+  'detection':['détection','detección','opsoring','detecção','erkennung'],
+  'early warning':['alerte précoce','advertencia temprana','vroege waarschuwing','aviso prévio','frühwarnung'],
+  'epidemic':['épidémie','epidemia','epidemie'],
+  'outbreak':['déclenchement','brote','uitbraak','surto','ausbruch'],
+  'pandemic':['pandémie','pandemie','pandemia'],
+  'infectio':['infeccion','infectie','infecção','überwachung'],
+  'laborator':['laboratoire','laboratorio','laboratorium','laboratório','labor'],
+  'surveillance':['vigilancia','toezicht','vigilância','überwachung'],
+  'vector control':['contrôle de vecteur','control de vectores','controle de vetores','vektorregelung'],
+  'cold chain':['la chaîne du froid','cadena de frío','cadeia fria','kühlkette'],
+  'information system':['système d'information','sistema de informacion','informatiesysteem','sistema de informação','informationssystem'],
+  'swap',
+  'sector wide approach':['approche sectorielle','enfoque sectorial','aproximação sectorial','sektorspezifischer ansatz'],
+  'system strengthening':['renforcement du système','fortalecimiento del sistema','fortalecimento do sistema','systemstärkung'],
+  'influenza':['grippe','gripe'],
+  'cholera':['choléra','cólera'],
+  'coronavirus':['coronavírus'],
+  'mers',
+  'sars':['sras'],
+  'ebola':['ébola'],
+  'hendra',
+  'leptospirosis':['leptospirose'],
+  'meningitis':['méningite','meningite'],
+  'nipah',
+  'plague':['peste','plaga','pest','praga'],
+  'rift valley':['la vallée du rift','febre do rift valley','rifttalfieber'],
+  'smallpox':['variole','viruela','pokken','varíola','pocken'],
+  'tularemia':['tularémie','tularaemie'],
+  'virus':['vírus'],
+  'fever':['fièvre','fiebre','koorts','febre','fieber'],
+  'antimicrobial resistan':['résistance antimicrobienne','resistencia antimicrobiana','antibioticaresistentie','resistência antimicrobiana','antimikrobielle resistenz'],
+  'crimean-congo':['de crimée-congo','crimea congo','krim-kongo-fieber'],
+  'haemorrhagic fever':['fièvre hémorragique','fiebre haemorrágica','hemorragische koorts','febre hemorrágica','haemorrhagisches fieber'],
+  'marburg':['marburgo'],
+  'lassa',
+  'malnutrition':['malnutrición','ondervoeding','malnutrição','unterernährung'],
+  'accountability system':['système de responsabilisation','sistema de rendicion de cuentas','verantwoordingssysteem','sistema de responsabilidade','verantwortliches system'],
+  'emergency management':['gestion d'urgence','gestión de emergencias','gerenciamento de emergência','notfallmanagement'],
+  'drug inventory':['inventaire de médicaments','inventario de drogas','drugsvoorraad','inventário de drogas','drogeninventar'],
+  'supply system':['système d'approvisionnement','sistema de suministros','bevoorraadingssysteem','sistema de fornecimento','versorgungs system'],
+  'financial management system':['système de gestion financière','sistema de gestión financiera','financieel beheersysteem','sistema de gestão financeira','finanzmanagement-system'],
+  'diagnostic facil':['centre de diagnostic','facilidad de diagnóstico','diagnostisch centrum','facilidade de diagnóstico','diagnostik center'],
+  'uhc':['cus'],
+  'system-wide':['à l'échelle du système','sistema-ancho','systeemwijd','sistema amplo','systemweit'],
+  'clinical service':['service clinique','servicio clínico','klinische service','serviço clínico','klinischer dienst'],
+  'hygiene':['hygiène','higiene,'hygiëne'],
+  'service delivery':['prestation de service','prestación de servicios','service levering','serviço de entrega','servicebereitstellung'],
+  'specialized service':['service spécialisé','servicio especializado','gespecialiseerde service','serviço especializado','spezialisierter service'],
+  'emergency risk management':['gestion des situations d'urgence','gestión del riesgo de emergencia','noodrisicomanagement','gestão de riscos de emergência','notrisikomanagement'],
+  'conditional cash transfer':['transferts conditionnels de fonds','transferencia de efectivo condicional','voorwaardelijke geld transfer','transferência de caixa condicional'],
+  'continuum of care':['continuum de soins','continuo de atención','continuum van zorg','continuum de cuidado','versorgungskette'],
+  'universal access':['accès universel','acceso universal','universele toegang','acesso universal','universeller zugang'],
+  'financial risk protection':['protection financière','protección financiera contra el riesgo','financiële risicobeveiliging','protecção de riscos financeiros','finanzieller risikoschutz'],
+  'care services':['services de soins','servicios de atención','zorgdiensten','serviços de cuidados','pflege-dienstleistungen'],
+  'essential intervention':['intervention essentielle','intervención esencial','essentiële interventie','intervenção essencial','essentielle intervention'],
+  'illness':['maladie','enfermedad','ziekte','doença','krankheit']"
+}
+
+df.Concatenate = df.Concatenate.str.lower()
+
+# Counting categories
+
+for keyword in keyword_mapping.keys():
+    field = 'count_' + keyword
+    df[field] = 0
+
+for keyword, incarnations in keyword_mapping.iteritems():
+    field = 'count_' + keyword
+    for incarnation in incarnations:
+        df[field] += df.Concatenate.apply(lambda v: v.count(incarnation))
+display(df)
+
+keywords = ['water', 'wasser', 'CONTRIBUø', 'épidémie']
+df.Concatenate = df.Concatenate.str.lower()
+df['keyword_count'] = 0
+df.keyword_count = df.Concatenate.apply(lambda v: sum(v.count(keyword) for keyword in keywords))
+display(df)
+
+display(df[df.keyword_count != 0].usd_disbursement.sum())
+sns.distplot(df[df.keyword_count != 0].usd_disbursement.dropna())
